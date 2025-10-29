@@ -1,4 +1,3 @@
-# ingeniero_virtual_acc_centrado.py
 import streamlit as st
 import json
 import copy
@@ -15,108 +14,96 @@ def load_setup(file):
         st.error("Archivo inválido")
         return None
 
-def set_valor_json(d, path, valor):
-    temp = d
-    for i, p in enumerate(path):
-        if i == len(path)-1:
-            if isinstance(temp, list) and p.isdigit():
-                temp[int(p)] = valor
-            else:
-                temp[p] = valor
-        else:
-            temp = temp[int(p)] if p.isdigit() else temp.get(p, {})
-
 def generar_recomendacion(param_name, valor_actual=None):
     if valor_actual is None:
-        texto = f"Incrementar {param_name} 1 punto"
+        return f"Incrementar {param_name} 1 punto"
     else:
-        texto = f"Incrementar {param_name} de {valor_actual} → {valor_actual+1}"
-    return texto
+        return f"Incrementar {param_name} de {valor_actual} → {valor_actual+1}"
 
 # ----------------------------------
 # Estado inicial
 # ----------------------------------
 if "setup" not in st.session_state:
     st.session_state.setup = None
-if "recomendaciones" not in st.session_state:
-    st.session_state.recomendaciones = []
 if "mostrar_menu" not in st.session_state:
     st.session_state.mostrar_menu = False
 if "menu_seleccionado" not in st.session_state:
     st.session_state.menu_seleccionado = None
+if "pagina_actual" not in st.session_state:
+    st.session_state.pagina_actual = "inicio"  # inicio o submenú
+if "recomendaciones" not in st.session_state:
+    st.session_state.recomendaciones = []
 
 # ----------------------------------
-# Título y carga inicial centrada
+# Título
 # ----------------------------------
-st.title("Ingeniero de Pista ACC", anchor=None)
-
-st.markdown("<div style='text-align:center'>", unsafe_allow_html=True)
-archivo_setup = st.file_uploader("Cargar archivo de setup", type=["json"])
-if archivo_setup:
-    st.session_state.setup = load_setup(archivo_setup)
-    st.session_state.mostrar_menu = True
-
-st.markdown("<br>", unsafe_allow_html=True)
-if st.button("Continuar sin cargar setup", key="continuar_setup"):
-    st.session_state.mostrar_menu = True
-st.markdown("</div>", unsafe_allow_html=True)
+st.title("Ingeniero de Pista ACC")
 
 # ----------------------------------
-# Menú principal en pantalla principal
+# Página inicio: cargar setup o continuar sin setup
 # ----------------------------------
-if st.session_state.mostrar_menu:
+if st.session_state.pagina_actual == "inicio":
+    st.markdown("<div style='text-align:center'>", unsafe_allow_html=True)
+    archivo_setup = st.file_uploader("Cargar archivo de setup", type=["json"])
+    if archivo_setup:
+        st.session_state.setup = load_setup(archivo_setup)
+        st.session_state.mostrar_menu = True
+        st.session_state.pagina_actual = "menu_principal"
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("Continuar sin cargar setup", key="continuar_setup", help="Entrar al ingeniero sin setup"):
+        st.session_state.mostrar_menu = True
+        st.session_state.pagina_actual = "menu_principal"
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ----------------------------------
+# Menú principal (botones cuadrados, grid)
+# ----------------------------------
+if st.session_state.pagina_actual == "menu_principal" and st.session_state.mostrar_menu:
     st.subheader("Menú principal")
-    menu = [
-        "Frenos",
-        "Aerodinámica",
-        "Suspensión",
-        "Electrónica",
-        "Neumáticos",
-        "Amortiguadores"
-    ]
-
-    # Mostrar cada menú como botón centrado
-    for categoria in menu:
-        if st.button(categoria, key=f"menu_{categoria}"):
-            st.session_state.menu_seleccionado = categoria
+    menu = ["Frenos", "Aerodinámica", "Suspensión", "Electrónica", "Neumáticos", "Amortiguadores"]
+    
+    # Grid responsive con 3 columnas aprox
+    cols = st.columns(3)
+    for i, categoria in enumerate(menu):
+        with cols[i % 3]:
+            if st.button(categoria, key=f"menu_{categoria}", 
+                         help=f"Abrir menú {categoria}", 
+                         args=None):
+                st.session_state.menu_seleccionado = categoria
+                st.session_state.pagina_actual = "submenu"
 
 # ----------------------------------
-# Funciones de síntomas (ejemplo)
+# Submenú
 # ----------------------------------
-def mostrar_sintomas_frenos():
-    st.write("### Frenos")
-    if st.button("No se detiene a tiempo", key="freno1"):
-        rec = generar_recomendacion("presión de frenos", 50 if st.session_state.setup else None)
-        st.session_state.recomendaciones.append(rec)
-    if st.button("Se detiene muy pronto", key="freno2"):
-        rec = generar_recomendacion("presión de frenos", 50 if st.session_state.setup else None)
-        st.session_state.recomendaciones.append(rec)
-    if st.button("Patina cuando freno", key="freno3"):
-        rec = generar_recomendacion("presión freno delantero", 50 if st.session_state.setup else None)
-        st.session_state.recomendaciones.append(rec)
-
-def mostrar_sintomas_aero():
-    st.write("### Aerodinámica")
-    if st.button("Voy muy lento en rectas", key="aero1"):
-        rec = generar_recomendacion("carga aerodinámica delantera", 5 if st.session_state.setup else None)
-        st.session_state.recomendaciones.append(rec)
-    if st.button("Patino en curvas rápidas", key="aero2"):
-        rec = generar_recomendacion("carga aerodinámica trasera", 5 if st.session_state.setup else None)
-        st.session_state.recomendaciones.append(rec)
-    if st.button("El auto no gira en curvas", key="aero3"):
-        rec = generar_recomendacion("carga aerodinámica delantera", 5 if st.session_state.setup else None)
-        st.session_state.recomendaciones.append(rec)
-
-# ----------------------------------
-# Mostrar síntomas según menú seleccionado
-# ----------------------------------
-if st.session_state.menu_seleccionado:
+if st.session_state.pagina_actual == "submenu":
     categoria = st.session_state.menu_seleccionado
+    st.subheader(f"{categoria}")
+    
+    st.markdown("<div style='text-align:center'>", unsafe_allow_html=True)
+    
+    # Ejemplo de síntomas por categoría
     if categoria == "Frenos":
-        mostrar_sintomas_frenos()
+        sintomas = ["No se detiene a tiempo", "Se detiene muy pronto", "Patina cuando freno"]
     elif categoria == "Aerodinámica":
-        mostrar_sintomas_aero()
-    # Aquí agregarías Suspensión, Electrónica, Neumáticos, Amortiguadores
+        sintomas = ["Voy muy lento en rectas", "Patino en curvas rápidas", "El auto no gira en curvas"]
+    else:
+        sintomas = ["Opción 1", "Opción 2"]  # placeholder
+
+    # Botones de síntomas
+    for s in sintomas:
+        if st.button(s, key=f"{categoria}_{s}"):
+            rec = generar_recomendacion(s)
+            st.session_state.recomendaciones.append(rec)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Botón volver al menú principal
+    if st.button("Volver al menú principal"):
+        st.session_state.pagina_actual = "menu_principal"
+        st.session_state.menu_seleccionado = None
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ----------------------------------
 # Resumen de recomendaciones
@@ -127,15 +114,11 @@ if st.session_state.recomendaciones:
         st.write(f"{i+1}. {rec}")
 
 # ----------------------------------
-# Exportar setup solo si no estamos en el menú inicial
+# Exportar setup (solo si hay setup cargado y estamos en submenú)
 # ----------------------------------
-if st.session_state.menu_seleccionado and st.session_state.menu_seleccionado != "Frenos":
-    if st.button("Exportar setup modificado", key="exportar"):
-        if st.session_state.setup is None:
-            st.warning("Debes cargar un setup antes de exportar")
-        else:
-            setup_mod = copy.deepcopy(st.session_state.setup)
-            # Aplicar cambios acumulados
-            with open("setup_modificado.json", "w") as f:
-                json.dump(setup_mod, f, indent=2)
-            st.success("Setup exportado como setup_modificado.json")
+if st.session_state.pagina_actual == "submenu" and st.session_state.setup:
+    if st.button("Exportar setup modificado"):
+        setup_mod = copy.deepcopy(st.session_state.setup)
+        with open("setup_modificado.json", "w") as f:
+            json.dump(setup_mod, f, indent=2)
+        st.success("Setup exportado como setup_modificado.json")
