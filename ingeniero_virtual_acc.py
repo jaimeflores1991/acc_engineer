@@ -47,14 +47,39 @@ param_desc = {
     "advancedSetup.mechanicalBalance.aRBRear": "Barra estabilizadora trasera",
     "advancedSetup.dampers.reboundSlow[2]": "Amortiguador trasero lento derecho",
     "advancedSetup.dampers.reboundSlow[3]": "Amortiguador trasero lento izquierdo",
-    "basicSetup.tyres.tyrePressure[0]": "Presión neumático delantero izquierdo",
-    "basicSetup.tyres.tyrePressure[1]": "Presión neumático delantero derecho",
-    "basicSetup.tyres.tyrePressure[2]": "Presión neumático trasero izquierdo",
-    "basicSetup.tyres.tyrePressure[3]": "Presión neumático trasero derecho",
-    "basicSetup.electronics.tC1": "Control de tracción TC1",
+    "basicSetup.tyres.tyrePressure[0]": "Neumático delantero izquierdo",
+    "basicSetup.tyres.tyrePressure[1]": "Neumático delantero derecho",
+    "basicSetup.tyres.tyrePressure[2]": "Neumático trasero izquierdo",
+    "basicSetup.tyres.tyrePressure[3]": "Neumático trasero derecho",
+    "basicSetup.electronics.tC1": "TC1",
     "basicSetup.electronics.abs": "ABS",
     "advancedSetup.mechanicalBalance.brakeBias": "Balance de frenos"
 }
+
+# --- Generar texto amigable ---
+def generar_texto_amigable(param, delta):
+    if delta > 0:
+        accion = "Aumentar"
+    elif delta < 0:
+        accion = "Disminuir"
+    else:
+        accion = "Mantener"
+    
+    # Mensajes especiales según parámetro
+    if "rearWing" in param:
+        return f"{accion} carga aerodinámica en el alerón trasero ({abs(delta)})"
+    elif "rideHeight" in param:
+        lado = "delantera" if "[0]" in param else "trasera"
+        return f"{accion} altura del coche en la parte {lado} ({abs(delta)})"
+    elif "brakeBias" in param:
+        dir_fb = "hacia adelante" if delta > 0 else "hacia atrás"
+        return f"Mover {abs(delta)} puntos de frenada {dir_fb}"
+    elif "tyrePressure" in param:
+        return f"{accion} presión del neumático {param_desc.get(param, param).lower()} ({abs(delta)})"
+    elif "tC1" in param or "abs" in param:
+        return f"{accion} potencia de {param_desc.get(param, param)} ({abs(delta)})"
+    else:
+        return f"{accion} {param_desc.get(param, param)} ({abs(delta)})"
 
 # --- Cargar setup JSON ---
 setup_file = st.file_uploader("📁 Cargar archivo de setup (.json)", type="json")
@@ -116,34 +141,33 @@ if sintoma and sintoma != "":
     st.subheader(f"Recomendaciones para: {sintoma}")
     recs = recomendaciones[categoria][sintoma]
     for param, delta in recs.items():
-        desc = param_desc.get(param, param)
-        st.write(f"**{desc}**: aplicar cambio {delta}")
-        if st.button(f"Aplicar {desc}", key=f"aplicar_{param}"):
+        texto = generar_texto_amigable(param, delta)
+        st.write(f"• {texto}")
+        if st.button(f"Aplicar {param}", key=f"aplicar_{param}"):
             st.session_state.modificaciones[param] = delta
-            st.success(f"✅ Recomendación '{desc}' añadida al setup")
+            st.success(f"✅ Recomendación '{texto}' añadida al setup")
 
 # --- Panel de resumen acumulativo ---
 st.subheader("🔍 Resumen acumulativo de cambios")
+
 if st.session_state.modificaciones:
-    tabla = []
+    # Crear lista de recomendaciones para selección
+    opciones_exportar = {}
     for param, delta in st.session_state.modificaciones.items():
-        partes = param.replace(']', '').replace('[', '.').split('.')[1:]
-        valor_original = get_valor_json(setup_original, partes)
-        if isinstance(valor_original, (int, float)):
-            valor_mod = valor_original + delta
-            diferencia = valor_mod - valor_original
-        else:
-            valor_mod = valor_original
-            diferencia = "-"
-        tabla.append((param, valor_original, valor_mod, diferencia))
+        texto = generar_texto_amigable(param, delta)
+        opciones_exportar[param] = st.checkbox(texto, value=True)
 
-    st.table([{"Parámetro": param_desc.get(p, p), "Original": o, "Modificado": m, "Diferencia": d} for p, o, m, d in tabla])
-
+    # Exportar solo seleccionadas
     if st.button("💾 Exportar setup modificado"):
         setup_mod = copy.deepcopy(setup_original)
-        for p, o, m, d in tabla:
-            partes = p.replace(']', '').replace('[', '.').split('.')[1:]
-            set_valor_json(setup_mod, partes, m)
+        for param, selected in opciones_exportar.items():
+            if selected:
+                partes = param.replace(']', '').replace('[', '.').split('.')[1:]
+                valor_original = get_valor_json(setup_original, partes)
+                if isinstance(valor_original, (int, float)):
+                    set_valor_json(setup_mod, partes, valor_original + st.session_state.modificaciones[param])
+                else:
+                    set_valor_json(setup_mod, partes, valor_original)
         st.download_button("⬇️ Descargar setup modificado", data=json.dumps(setup_mod, indent=2), file_name="setup_modificado.json")
 else:
     st.info("Aún no has aplicado ninguna recomendación.")
