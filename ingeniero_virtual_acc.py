@@ -99,8 +99,13 @@ if st.session_state.modificaciones:
     for param, delta in st.session_state.modificaciones.items():
         partes = param.replace(']', '').replace('[', '.').split('.')[1:]
         valor_original = get_valor_json(setup_original, partes)
-        valor_mod = valor_original + delta if isinstance(valor_original, (int, float)) else valor_original
-        tabla.append((param, valor_original, valor_mod, valor_mod - valor_original))
+        if isinstance(valor_original, (int, float)):
+            valor_mod = valor_original + delta
+            diferencia = valor_mod - valor_original
+        else:
+            valor_mod = valor_original
+            diferencia = "-"
+        tabla.append((param, valor_original, valor_mod, diferencia))
 
     st.table([{"Parámetro": p, "Original": o, "Modificado": m, "Diferencia": d} for p, o, m, d in tabla])
 
