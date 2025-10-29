@@ -9,23 +9,52 @@ st.title("🏎️ Ingeniero Virtual ACC")
 def get_valor_json(data, path):
     temp = data
     for p in path:
-        if isinstance(temp, list):
+        if p.isdigit():
             temp = temp[int(p)]
-        elif isinstance(temp, dict):
-            temp = temp.get(p)
         else:
-            return temp
+            temp = temp.get(p)
+            if temp is None:
+                return None
     return temp
 
 def set_valor_json(data, path, valor):
     temp = data
-    for p in path[:-1]:
-        temp = temp[int(p)] if p.isdigit() else temp[p]
+    for i, p in enumerate(path[:-1]):
+        if p.isdigit():
+            p = int(p)
+            while len(temp) <= p:
+                temp.append({})
+            temp = temp[p]
+        else:
+            if p not in temp:
+                temp[p] = {}
+            temp = temp[p]
     ult = path[-1]
     if ult.isdigit():
-        temp[int(ult)] = valor
+        ult = int(ult)
+        while len(temp) <= ult:
+            temp.append(None)
+        temp[ult] = valor
     else:
         temp[ult] = valor
+
+# --- Mapeo técnico -> descripción amigable ---
+param_desc = {
+    "advancedSetup.aeroBalance.rearWing": "Alerón trasero",
+    "advancedSetup.aeroBalance.rideHeight[0]": "Altura delantera",
+    "advancedSetup.aeroBalance.rideHeight[1]": "Altura trasera",
+    "advancedSetup.mechanicalBalance.aRBFront": "Barra estabilizadora delantera",
+    "advancedSetup.mechanicalBalance.aRBRear": "Barra estabilizadora trasera",
+    "advancedSetup.dampers.reboundSlow[2]": "Amortiguador trasero lento derecho",
+    "advancedSetup.dampers.reboundSlow[3]": "Amortiguador trasero lento izquierdo",
+    "basicSetup.tyres.tyrePressure[0]": "Presión neumático delantero izquierdo",
+    "basicSetup.tyres.tyrePressure[1]": "Presión neumático delantero derecho",
+    "basicSetup.tyres.tyrePressure[2]": "Presión neumático trasero izquierdo",
+    "basicSetup.tyres.tyrePressure[3]": "Presión neumático trasero derecho",
+    "basicSetup.electronics.tC1": "Control de tracción TC1",
+    "basicSetup.electronics.abs": "ABS",
+    "advancedSetup.mechanicalBalance.brakeBias": "Balance de frenos"
+}
 
 # --- Cargar setup JSON ---
 setup_file = st.file_uploader("📁 Cargar archivo de setup (.json)", type="json")
@@ -87,10 +116,11 @@ if sintoma and sintoma != "":
     st.subheader(f"Recomendaciones para: {sintoma}")
     recs = recomendaciones[categoria][sintoma]
     for param, delta in recs.items():
-        st.write(f"**{param}**: aplicar cambio {delta}")
-        if st.button(f"Aplicar {param}", key=f"aplicar_{param}"):
+        desc = param_desc.get(param, param)
+        st.write(f"**{desc}**: aplicar cambio {delta}")
+        if st.button(f"Aplicar {desc}", key=f"aplicar_{param}"):
             st.session_state.modificaciones[param] = delta
-            st.success(f"✅ Recomendación '{param}' añadida al setup")
+            st.success(f"✅ Recomendación '{desc}' añadida al setup")
 
 # --- Panel de resumen acumulativo ---
 st.subheader("🔍 Resumen acumulativo de cambios")
@@ -107,7 +137,7 @@ if st.session_state.modificaciones:
             diferencia = "-"
         tabla.append((param, valor_original, valor_mod, diferencia))
 
-    st.table([{"Parámetro": p, "Original": o, "Modificado": m, "Diferencia": d} for p, o, m, d in tabla])
+    st.table([{"Parámetro": param_desc.get(p, p), "Original": o, "Modificado": m, "Diferencia": d} for p, o, m, d in tabla])
 
     if st.button("💾 Exportar setup modificado"):
         setup_mod = copy.deepcopy(setup_original)
