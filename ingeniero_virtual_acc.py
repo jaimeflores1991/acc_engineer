@@ -5,6 +5,28 @@ import copy
 st.set_page_config(page_title="Ingeniero Virtual ACC", layout="wide")
 st.title("🏎️ Ingeniero Virtual ACC")
 
+# --- Funciones helper ---
+def get_valor_json(data, path):
+    temp = data
+    for p in path:
+        if isinstance(temp, list):
+            temp = temp[int(p)]
+        elif isinstance(temp, dict):
+            temp = temp.get(p)
+        else:
+            return temp
+    return temp
+
+def set_valor_json(data, path, valor):
+    temp = data
+    for p in path[:-1]:
+        temp = temp[int(p)] if p.isdigit() else temp[p]
+    ult = path[-1]
+    if ult.isdigit():
+        temp[int(ult)] = valor
+    else:
+        temp[ult] = valor
+
 # --- Cargar setup JSON ---
 setup_file = st.file_uploader("📁 Cargar archivo de setup (.json)", type="json")
 
@@ -75,11 +97,8 @@ st.subheader("🔍 Resumen acumulativo de cambios")
 if st.session_state.modificaciones:
     tabla = []
     for param, delta in st.session_state.modificaciones.items():
-        partes = param.replace(']', '').replace('[', '.').split('.')
-        temp = setup_original
-        for p in partes[1:]:
-            temp = temp[int(p)] if p.isdigit() else temp.get(p)
-        valor_original = temp
+        partes = param.replace(']', '').replace('[', '.').split('.')[1:]
+        valor_original = get_valor_json(setup_original, partes)
         valor_mod = valor_original + delta if isinstance(valor_original, (int, float)) else valor_original
         tabla.append((param, valor_original, valor_mod, valor_mod - valor_original))
 
@@ -88,15 +107,8 @@ if st.session_state.modificaciones:
     if st.button("💾 Exportar setup modificado"):
         setup_mod = copy.deepcopy(setup_original)
         for p, o, m, d in tabla:
-            partes = p.replace(']', '').replace('[', '.').split('.')
-            temp = setup_mod
-            for sub in partes[1:-1]:
-                temp = temp[int(sub)] if sub.isdigit() else temp[sub]
-            ult = partes[-1]
-            if ult.isdigit():
-                temp[int(ult)] = m
-            else:
-                temp[ult] = m
+            partes = p.replace(']', '').replace('[', '.').split('.')[1:]
+            set_valor_json(setup_mod, partes, m)
         st.download_button("⬇️ Descargar setup modificado", data=json.dumps(setup_mod, indent=2), file_name="setup_modificado.json")
 else:
     st.info("Aún no has aplicado ninguna recomendación.")
