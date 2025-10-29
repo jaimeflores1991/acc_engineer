@@ -25,63 +25,54 @@ def generar_recomendacion(param_name, valor_actual=None):
 # ----------------------------------
 if "setup" not in st.session_state:
     st.session_state.setup = None
-if "mostrar_menu" not in st.session_state:
-    st.session_state.mostrar_menu = False
+if "pagina_actual" not in st.session_state:
+    st.session_state.pagina_actual = "home"  # home, menu_principal, submenu
 if "menu_seleccionado" not in st.session_state:
     st.session_state.menu_seleccionado = None
-if "pagina_actual" not in st.session_state:
-    st.session_state.pagina_actual = "inicio"  # inicio o submenú
 if "recomendaciones" not in st.session_state:
     st.session_state.recomendaciones = []
 
 # ----------------------------------
-# Título
+# Home
 # ----------------------------------
-st.title("Ingeniero de Pista ACC")
-
-# ----------------------------------
-# Página inicio: cargar setup o continuar sin setup
-# ----------------------------------
-if st.session_state.pagina_actual == "inicio":
+if st.session_state.pagina_actual == "home":
+    st.title("Ingeniero de Pista ACC")
     st.markdown("<div style='text-align:center'>", unsafe_allow_html=True)
+    
     archivo_setup = st.file_uploader("Cargar archivo de setup", type=["json"])
     if archivo_setup:
         st.session_state.setup = load_setup(archivo_setup)
-        st.session_state.mostrar_menu = True
         st.session_state.pagina_actual = "menu_principal"
     
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("Continuar sin cargar setup", key="continuar_setup", help="Entrar al ingeniero sin setup"):
-        st.session_state.mostrar_menu = True
         st.session_state.pagina_actual = "menu_principal"
+    
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ----------------------------------
-# Menú principal (botones cuadrados, grid)
+# Menú principal (solo categorías)
 # ----------------------------------
-if st.session_state.pagina_actual == "menu_principal" and st.session_state.mostrar_menu:
+elif st.session_state.pagina_actual == "menu_principal":
+    st.title("Ingeniero de Pista ACC")
     st.subheader("Menú principal")
-    menu = ["Frenos", "Aerodinámica", "Suspensión", "Electrónica", "Neumáticos", "Amortiguadores"]
     
-    # Grid responsive con 3 columnas aprox
+    menu = ["Frenos", "Aerodinámica", "Suspensión", "Electrónica", "Neumáticos", "Amortiguadores"]
     cols = st.columns(3)
     for i, categoria in enumerate(menu):
         with cols[i % 3]:
-            if st.button(categoria, key=f"menu_{categoria}", 
-                         help=f"Abrir menú {categoria}", 
-                         args=None):
+            if st.button(categoria, key=f"menu_{categoria}"):
                 st.session_state.menu_seleccionado = categoria
                 st.session_state.pagina_actual = "submenu"
 
 # ----------------------------------
-# Submenú
+# Submenú de categoría
 # ----------------------------------
-if st.session_state.pagina_actual == "submenu":
+elif st.session_state.pagina_actual == "submenu":
     categoria = st.session_state.menu_seleccionado
-    st.subheader(f"{categoria}")
-    
+    st.title(f"{categoria}")
     st.markdown("<div style='text-align:center'>", unsafe_allow_html=True)
-    
+
     # Ejemplo de síntomas por categoría
     if categoria == "Frenos":
         sintomas = ["No se detiene a tiempo", "Se detiene muy pronto", "Patina cuando freno"]
@@ -114,7 +105,7 @@ if st.session_state.recomendaciones:
         st.write(f"{i+1}. {rec}")
 
 # ----------------------------------
-# Exportar setup (solo si hay setup cargado y estamos en submenú)
+# Exportar setup (solo si hay setup y estamos en submenú)
 # ----------------------------------
 if st.session_state.pagina_actual == "submenu" and st.session_state.setup:
     if st.button("Exportar setup modificado"):
