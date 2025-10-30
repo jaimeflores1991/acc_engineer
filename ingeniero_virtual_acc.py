@@ -39,7 +39,7 @@ def aplicar_recomendacion(cat, sintoma, rec_index):
         "unit": rec["unit"],
         "desc": rec.get("desc","")
     })
-    st.success(f"Aplicada: {rec['accion']}")
+    st.toast(f"Aplicada: {rec['accion']}")
 
 def borrar_recomendaciones():
     st.session_state.recomendaciones_aplicadas = []
@@ -72,8 +72,9 @@ if st.session_state.menu_actual == "home":
 if st.session_state.menu_actual == "menu_principal":
     st.title("Menú Principal")
     categorias = list(mapa_recomendaciones.keys())
-    for cat in categorias:
-        if st.button(cat):
+    cols = st.columns(len(categorias))
+    for i, cat in enumerate(categorias):
+        if cols[i].button(cat):
             st.session_state.menu_actual = f"cat_{cat}"
             st.session_state.cat_actual = cat
             st.session_state.sintoma_actual = None
@@ -100,10 +101,11 @@ if st.session_state.menu_actual.startswith("cat_"):
     st.title(cat)
 
     sintomas = list(mapa_recomendaciones[cat].keys())
-    for sintoma in sintomas:
-        if st.session_state.sintoma_actual != sintoma:
-            if st.button(sintoma):
-                st.session_state.sintoma_actual = sintoma
+    cols = st.columns(2)  # Dos columnas para síntomas
+    for i, sintoma in enumerate(sintomas):
+        col = cols[i%2]
+        if col.button(sintoma):
+            st.session_state.sintoma_actual = sintoma
 
     # Mostrar recomendaciones del síntoma seleccionado
     if st.session_state.sintoma_actual:
