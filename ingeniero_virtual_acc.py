@@ -24,20 +24,19 @@ def apply_recommendation(reco):
     st.session_state.applied.append(reco)
     st.toast(f"Aplicado: {reco['accion']} {reco['change']}{reco['unit']}")  # ventanita temporal
 
-# 🔧 Mejorado para exportar con formato igual al original
+# 🔧 Función para exportar JSON con listas horizontales
 def download_setup():
     if st.session_state.setup:
-        data = json.dumps(
-            st.session_state.setup,
-            indent=2,
-            separators=(',', ': '),
-            ensure_ascii=False
-        )
+        class CompactEncoder(json.JSONEncoder):
+            def iterencode(self, o, _one_shot=False):
+                if isinstance(o, list):
+                    return "[" + ", ".join(json.dumps(el) for el in o) + "]"
+                return super().iterencode(o, _one_shot)
+
+        data = json.dumps(st.session_state.setup, cls=CompactEncoder, indent=2, ensure_ascii=False)
         b64 = base64.b64encode(data.encode()).decode()
-        href = (
-            f'<a href="data:file/json;base64,{b64}" '
-            f'download="setup_modificado.json">Descargar setup</a>'
-        )
+        filename = f"setup_{st.session_state.setup.get('carName','modificado')}.json"
+        href = f'<a href="data:file/json;base64,{b64}" download="{filename}">Descargar setup</a>'
         st.markdown(href, unsafe_allow_html=True)
 
 # --- Home Page ---
@@ -87,7 +86,8 @@ elif st.session_state.page == "submenu_recomendaciones":
     category = st.session_state.selected_category
     sintoma = st.session_state.selected_sintoma
 
-    recomendaciones = RECOMENDACIONES[category][sintoma]  # Ajuste según categoría
+    # Usamos directamente RECOMENDACIONES con la categoría completa
+    recomendaciones = RECOMENDACIONES[category][sintoma]
     for reco in recomendaciones:
         if st.button(reco["accion"]):
             apply_recommendation(reco)
