@@ -23,16 +23,16 @@ def aplicar_recomendacion(categoria, sintoma, recomendacion):
         "unit": recomendacion["unit"],
         "desc": recomendacion.get("desc", "")
     })
+    # Mostrar notificación emergente
+    st.toast(f"Aplicada: {recomendacion['accion']} ({recomendacion['change']} {recomendacion['unit']})")
 
 def mostrar_sintomas_y_recomendaciones(categoria):
     sintomas = RECOMENDACIONES.get(categoria, {})
     for sintoma, acciones in sintomas.items():
         st.markdown(f"### {sintoma}")
         for rec in acciones:
-            # Botón de acción
             if st.button(rec["accion"], key=f'{categoria}_{sintoma}_{rec["accion"]}'):
                 aplicar_recomendacion(categoria, sintoma, rec)
-            # Descripción debajo del botón
             if rec.get("desc"):
                 st.markdown(f"*{rec['desc']}*")
         st.markdown("---")
@@ -45,12 +45,14 @@ if st.session_state.pantalla == "home":
         try:
             st.session_state.setup = json.load(uploaded_file)
             st.session_state.pantalla = "menu_principal"
+            st.experimental_rerun()
         except Exception as e:
             st.error(f"Error leyendo el setup: {e}")
 
     if st.button("Continuar sin cargar setup", key="continuar", help="Usar valores por defecto"):
         st.session_state.setup = None
         st.session_state.pantalla = "menu_principal"
+        st.experimental_rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -61,6 +63,7 @@ elif st.session_state.pantalla == "menu_principal":
         if st.button(cat, key=f"cat_{cat}"):
             st.session_state.categoria_actual = cat
             st.session_state.pantalla = "submenu"
+            st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif st.session_state.pantalla == "submenu":
@@ -70,25 +73,28 @@ elif st.session_state.pantalla == "submenu":
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
     if st.button("Volver al menú principal"):
         st.session_state.pantalla = "menu_principal"
+        st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ---- Resumen de recomendaciones ----
-st.markdown("---")
-st.markdown("## Resumen de recomendaciones seleccionadas")
-if st.session_state.selecciones:
-    for idx, sel in enumerate(st.session_state.selecciones):
-        st.markdown(f"**{sel['categoria']} - {sel['sintoma']}**")
-        st.markdown(f"- Acción: {sel['accion']} ({sel['change']} {sel['unit']})")
-        if sel.get("desc"):
-            st.markdown(f"  *{sel['desc']}*")
-        if st.button("X", key=f"eliminar_{idx}"):
-            st.session_state.selecciones.pop(idx)
-else:
-    st.markdown("No hay recomendaciones aplicadas aún.")
+if st.session_state.pantalla == "submenu":
+    st.markdown("---")
+    st.markdown("## Resumen de recomendaciones seleccionadas")
+    if st.session_state.selecciones:
+        for idx, sel in enumerate(st.session_state.selecciones):
+            st.markdown(f"**{sel['categoria']} - {sel['sintoma']}**")
+            st.markdown(f"- Acción: {sel['accion']} ({sel['change']} {sel['unit']})")
+            if sel.get("desc"):
+                st.markdown(f"  *{sel['desc']}*")
+            if st.button("X", key=f"eliminar_{idx}"):
+                st.session_state.selecciones.pop(idx)
+                st.experimental_rerun()
+    else:
+        st.markdown("No hay recomendaciones aplicadas aún.")
 
 # ---- Exportar setup con recomendaciones ----
-st.markdown("---")
-if st.session_state.selecciones:
+if st.session_state.pantalla == "submenu" and st.session_state.selecciones:
+    st.markdown("---")
     if st.button("Exportar setup con recomendaciones"):
         export_data = {
             "setup": st.session_state.setup,
