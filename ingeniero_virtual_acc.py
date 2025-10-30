@@ -3,7 +3,7 @@ import streamlit as st
 import json
 from recomendaciones import RECOMENDACIONES
 
-# Inicializar session_state
+# ---- Inicializar session_state ----
 if "pantalla" not in st.session_state:
     st.session_state.pantalla = "home"
 if "setup" not in st.session_state:
@@ -13,7 +13,7 @@ if "selecciones" not in st.session_state:
 if "categoria_actual" not in st.session_state:
     st.session_state.categoria_actual = None
 
-# Función para aplicar recomendación
+# ---- Funciones ----
 def aplicar_recomendacion(categoria, sintoma, recomendacion):
     st.session_state.selecciones.append({
         "categoria": categoria,
@@ -24,26 +24,22 @@ def aplicar_recomendacion(categoria, sintoma, recomendacion):
         "desc": recomendacion.get("desc", "")
     })
 
-# Función para mostrar botones de síntomas y recomendaciones
 def mostrar_sintomas_y_recomendaciones(categoria):
     sintomas = RECOMENDACIONES.get(categoria, {})
     for sintoma, acciones in sintomas.items():
         st.markdown(f"### {sintoma}")
         for rec in acciones:
+            # Botón de acción
             if st.button(rec["accion"], key=f'{categoria}_{sintoma}_{rec["accion"]}'):
                 aplicar_recomendacion(categoria, sintoma, rec)
-        for rec in acciones:
+            # Descripción debajo del botón
             if rec.get("desc"):
                 st.markdown(f"*{rec['desc']}*")
         st.markdown("---")
 
 # ---- Pantallas ----
 if st.session_state.pantalla == "home":
-    st.write("")
-    st.write("")
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-
-    # Subida de setup
     uploaded_file = st.file_uploader("Cargar setup ACC (.json)", type=["json"])
     if uploaded_file is not None:
         try:
@@ -52,8 +48,7 @@ if st.session_state.pantalla == "home":
         except Exception as e:
             st.error(f"Error leyendo el setup: {e}")
 
-    # Botón continuar sin setup
-    if st.button("Continuar sin cargar setup", key="continuar", help="Puedes continuar sin setup, se usarán valores por defecto"):
+    if st.button("Continuar sin cargar setup", key="continuar", help="Usar valores por defecto"):
         st.session_state.setup = None
         st.session_state.pantalla = "menu_principal"
 
