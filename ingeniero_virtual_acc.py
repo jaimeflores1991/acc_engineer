@@ -78,7 +78,7 @@ elif st.session_state.page == "submenu_recomendaciones":
     category = st.session_state.selected_category
     sintoma = st.session_state.selected_sintoma
 
-    recomendaciones = RECOMENDACIONES[category.split(" y ")[0]][sintoma]  # Ajuste según categoría
+    recomendaciones = RECOMENDACIONES[category][sintoma]  # Ajuste según categoría
     for reco in recomendaciones:
         if st.button(reco["accion"]):
             apply_recommendation(reco)
