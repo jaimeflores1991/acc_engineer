@@ -1,153 +1,101 @@
 import streamlit as st
-import json
 from recomendaciones import recomendacion_map
-import copy
 
-st.set_page_config(page_title="Ingeniero de Pista ACC", layout="centered")
+st.set_page_config(page_title="Ingeniero Virtual ACC", layout="wide")
 
-# ----------------- FUNCIONES -----------------
+# ----------------- ESTILO -----------------
+st.markdown("""
+    <style>
+        .main-title {
+            font-size: 36px;
+            font-weight: 700;
+            text-align: center;
+            color: #00c3ff;
+            margin-bottom: 20px;
+        }
+        .category-button > button {
+            background-color: #1e1e1e !important;
+            color: #00c3ff !important;
+            border: 1px solid #00c3ff !important;
+            border-radius: 10px !important;
+            font-size: 18px !important;
+            font-weight: 500 !important;
+            padding: 10px !important;
+            transition: 0.2s;
+        }
+        .category-button > button:hover {
+            background-color: #00c3ff !important;
+            color: #000 !important;
+            transform: scale(1.03);
+        }
+        .reco-box {
+            background-color: #111;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            margin-bottom: 10px;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
-def cargar_setup(file):
-    try:
-        return json.load(file)
-    except:
-        st.error("Error al cargar JSON.")
-        return None
+# ----------------- SESIÓN -----------------
+if "current_menu" not in st.session_state:
+    st.session_state.current_menu = "menu_principal"
 
-def aplicar_cambio(setup, cambio):
-    """
-    Aplica un cambio del mapa de recomendaciones al setup.
-    """
-    if isinstance(cambio, list):
-        for c in cambio:
-            aplicar_cambio(setup, c)
-        return
-
-    path = cambio["path"]
-    valor = cambio["change"]
-    temp = setup
-    for p in path[:-1]:
-        temp = temp[p]
-    key = path[-1]
-
-    if isinstance(temp[key], list):
-        for i in range(len(temp[key])):
-            if str(valor).startswith('+') or str(valor).startswith('-'):
-                temp[key][i] += float(valor)
-            else:
-                temp[key][i] = float(valor)
-    else:
-        if str(valor).startswith('+') or str(valor).startswith('-'):
-            temp[key] += float(valor)
-        else:
-            temp[key] = float(valor)
-
-# ----------------- ESTADO -----------------
-
-if "setup" not in st.session_state:
-    st.session_state.setup = None
 if "recomendaciones" not in st.session_state:
     st.session_state.recomendaciones = []
-if "current_menu" not in st.session_state:
-    st.session_state.current_menu = "home"
-if "go_next" not in st.session_state:
-    st.session_state.go_next = False
 
-# ----------------- HOME -----------------
-
-if st.session_state.current_menu == "home":
-    st.title("🏁 Ingeniero de Pista ACC")
-    st.subheader("Cargar setup ACC")
-
-    uploaded_file = st.file_uploader("Selecciona un archivo JSON de setup", type="json")
-
-    if uploaded_file:
-        setup = cargar_setup(uploaded_file)
-        if setup:
-            st.session_state.setup = setup
-            st.session_state.go_next = True
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # BOTÓN CENTRADO DE CONTINUAR SIN CARGAR SETUP
-    st.markdown(
-        """
-        <div style='text-align: center;'>
-            <form action="#" method="get">
-                <button type="submit" name="continue" style="
-                    background-color:#4CAF50;
-                    color:white;
-                    padding:10px 30px;
-                    border:none;
-                    border-radius:10px;
-                    font-size:18px;
-                    cursor:pointer;
-                ">Continuar sin cargar setup</button>
-            </form>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # Si el usuario presionó continuar
-    query_params = st.query_params
-    if "continue" in query_params:
-        st.session_state.setup = None
-        st.session_state.go_next = True
-        st.query_params.clear()
-
-    if st.session_state.go_next:
-        st.session_state.current_menu = "menu_principal"
-        st.session_state.go_next = False
-        st.rerun()
-
-# ----------------- MENU PRINCIPAL -----------------
-
-elif st.session_state.current_menu == "menu_principal":
-    st.title("Categorías de Ajustes")
-    st.markdown("<br>", unsafe_allow_html=True)
+# ----------------- MENÚ PRINCIPAL -----------------
+if st.session_state.current_menu == "menu_principal":
+    st.markdown('<div class="main-title">🧠 Ingeniero Virtual - Assetto Corsa Competizione</div>', unsafe_allow_html=True)
+    st.write("Selecciona una categoría para obtener recomendaciones personalizadas:")
 
     categorias = [
         "Frenos",
-        "Aerodinámica",
         "Suspensión / Agarre Mecánico",
-        "Electrónica",
         "Amortiguadores",
-        "Neumáticos"
+        "Aerodinámica",
+        "Electrónica",
+        "Neumáticos",
+        "Resumen / Exportar",
     ]
 
-    # CENTRAR BOTONES
-    col = st.columns(1)[0]
-    with col:
-        for cat in categorias:
-            st.button(cat, key=cat, use_container_width=True,
-                      on_click=lambda c=cat: st.session_state.update({"current_menu": c, "go_next": True}))
-
-    if st.session_state.go_next:
-        st.session_state.go_next = False
-        st.rerun()
+    cols = st.columns(3)
+    for i, cat in enumerate(categorias):
+        with cols[i % 3]:
+            with st.container():
+                st.markdown('<div class="category-button">', unsafe_allow_html=True)
+                if st.button(cat, use_container_width=True):
+                    st.session_state.current_menu = cat
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------- SUBMENUS -----------------
-
 else:
     st.title(f"{st.session_state.current_menu}")
 
-    # Filtrar recomendaciones por categoría
     cat = st.session_state.current_menu
     opciones = []
+
     for k, v in recomendacion_map.items():
-        if (cat == "Frenos" and "brake" in str(v["path"])) \
-            or (cat == "Aerodinámica" and "aeroBalance" in str(v["path"])) \
-            or (cat == "Suspensión / Agarre Mecánico" and "mechanicalBalance" in str(v["path"])) \
-            or (cat == "Electrónica" and "electronics" in str(v["path"])) \
-            or (cat == "Amortiguadores" and "dampers" in str(v["path"])) \
-            or (cat == "Neumáticos" and ("tyres" in str(v["path"]) or "alignment" in str(v["path"]))):
+        path_str = str(v.get("path", ""))  # <- evita error si falta "path"
+        if (
+            (cat == "Frenos" and "brake" in path_str)
+            or (cat == "Aerodinámica" and "aeroBalance" in path_str)
+            or (cat == "Suspensión / Agarre Mecánico" and "mechanicalBalance" in path_str)
+            or (cat == "Electrónica" and "electronics" in path_str)
+            or (cat == "Amortiguadores" and "dampers" in path_str)
+            or (cat == "Neumáticos" and ("tyres" in path_str or "alignment" in path_str))
+        ):
             opciones.append(k)
 
-    for op in opciones:
-        if st.button(op, use_container_width=True):
-            if op not in st.session_state.recomendaciones:
-                st.session_state.recomendaciones.append(op)
+    if not opciones:
+        st.info("⚠️ No hay recomendaciones definidas para esta categoría aún.")
+    else:
+        for op in opciones:
+            if st.button(op, use_container_width=True):
+                if op not in st.session_state.recomendaciones:
+                    st.session_state.recomendaciones.append(op)
 
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("Volver al menú principal"):
@@ -155,29 +103,25 @@ else:
         st.rerun()
 
 # ----------------- RESUMEN Y EXPORTACIÓN -----------------
-
-if st.session_state.recomendaciones:
-    st.markdown("---")
-    st.subheader("Resumen de Recomendaciones")
-
-    for r in st.session_state.recomendaciones:
-        col1, col2 = st.columns([8, 1])
-        with col1:
-            st.write(r)
-        with col2:
-            if st.button("❌", key=f"del_{r}"):
-                st.session_state.recomendaciones.remove(r)
-                st.rerun()
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    if st.session_state.setup is not None:
-        if st.button("💾 Exportar setup modificado"):
-            setup_mod = copy.deepcopy(st.session_state.setup)
-            for r in st.session_state.recomendaciones:
-                aplicar_cambio(setup_mod, recomendacion_map[r])
-            with open("setup_modificado.json", "w") as f:
-                json.dump(setup_mod, f, indent=4)
-            st.success("✅ Setup exportado como setup_modificado.json")
+if st.session_state.current_menu == "Resumen / Exportar":
+    st.subheader("🧾 Resumen de recomendaciones seleccionadas")
+    if not st.session_state.recomendaciones:
+        st.write("No has seleccionado recomendaciones aún.")
     else:
-        st.info("ℹ️ Para exportar debes cargar un setup primero.")
+        for rec in st.session_state.recomendaciones:
+            data = recomendacion_map.get(rec, {})
+            desc = data.get("desc", "Sin descripción disponible.")
+            st.markdown(f"<div class='reco-box'><b>{rec}</b><br>{desc}</div>", unsafe_allow_html=True)
+
+    st.download_button(
+        label="⬇️ Descargar recomendaciones",
+        data="\n\n".join(
+            [f"{r}: {recomendacion_map[r].get('desc', '')}" for r in st.session_state.recomendaciones]
+        ),
+        file_name="recomendaciones_ACC.txt",
+    )
+
+    if st.button("🔁 Reiniciar selección"):
+        st.session_state.recomendaciones = []
+        st.session_state.current_menu = "menu_principal"
+        st.rerun()
