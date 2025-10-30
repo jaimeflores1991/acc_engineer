@@ -50,26 +50,56 @@ if "recomendaciones" not in st.session_state:
     st.session_state.recomendaciones = []
 if "current_menu" not in st.session_state:
     st.session_state.current_menu = "home"
+if "go_next" not in st.session_state:
+    st.session_state.go_next = False
 
 # ----------------- HOME -----------------
 
 if st.session_state.current_menu == "home":
-    st.title("Ingeniero de Pista ACC")
+    st.title("🏁 Ingeniero de Pista ACC")
     st.subheader("Cargar setup ACC")
+
     uploaded_file = st.file_uploader("Selecciona un archivo JSON de setup", type="json")
-    
+
     if uploaded_file:
-        st.session_state.setup = cargar_setup(uploaded_file)
-        st.session_state.current_menu = "menu_principal"
-        st.experimental_rerun()
+        setup = cargar_setup(uploaded_file)
+        if setup:
+            st.session_state.setup = setup
+            st.session_state.go_next = True
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # BOTÓN DE CONTINUAR SIN CARGAR SETUP
-    if st.button("Continuar sin cargar setup", key="sin_setup"):
+    # BOTÓN CENTRADO DE CONTINUAR SIN CARGAR SETUP
+    st.markdown(
+        """
+        <div style='text-align: center;'>
+            <form action="#" method="get">
+                <button type="submit" name="continue" style="
+                    background-color:#4CAF50;
+                    color:white;
+                    padding:10px 30px;
+                    border:none;
+                    border-radius:10px;
+                    font-size:18px;
+                    cursor:pointer;
+                ">Continuar sin cargar setup</button>
+            </form>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Si el usuario presionó continuar
+    query_params = st.query_params
+    if "continue" in query_params:
         st.session_state.setup = None
+        st.session_state.go_next = True
+        st.query_params.clear()
+
+    if st.session_state.go_next:
         st.session_state.current_menu = "menu_principal"
-        st.experimental_rerun()
+        st.session_state.go_next = False
+        st.rerun()
 
 # ----------------- MENU PRINCIPAL -----------------
 
@@ -86,10 +116,16 @@ elif st.session_state.current_menu == "menu_principal":
         "Neumáticos"
     ]
 
-    for cat in categorias:
-        if st.button(cat, key=cat):
-            st.session_state.current_menu = cat
-            st.experimental_rerun()
+    # CENTRAR BOTONES
+    col = st.columns(1)[0]
+    with col:
+        for cat in categorias:
+            st.button(cat, key=cat, use_container_width=True,
+                      on_click=lambda c=cat: st.session_state.update({"current_menu": c, "go_next": True}))
+
+    if st.session_state.go_next:
+        st.session_state.go_next = False
+        st.rerun()
 
 # ----------------- SUBMENUS -----------------
 
@@ -109,14 +145,14 @@ else:
             opciones.append(k)
 
     for op in opciones:
-        if st.button(op):
+        if st.button(op, use_container_width=True):
             if op not in st.session_state.recomendaciones:
                 st.session_state.recomendaciones.append(op)
 
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("Volver al menú principal"):
         st.session_state.current_menu = "menu_principal"
-        st.experimental_rerun()
+        st.rerun()
 
 # ----------------- RESUMEN Y EXPORTACIÓN -----------------
 
@@ -125,24 +161,23 @@ if st.session_state.recomendaciones:
     st.subheader("Resumen de Recomendaciones")
 
     for r in st.session_state.recomendaciones:
-        col1, col2 = st.columns([8,1])
+        col1, col2 = st.columns([8, 1])
         with col1:
             st.write(r)
         with col2:
-            if st.button("X", key=f"del_{r}"):
+            if st.button("❌", key=f"del_{r}"):
                 st.session_state.recomendaciones.remove(r)
-                st.experimental_rerun()
+                st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
-    
+
     if st.session_state.setup is not None:
-        if st.button("Exportar setup modificado"):
+        if st.button("💾 Exportar setup modificado"):
             setup_mod = copy.deepcopy(st.session_state.setup)
             for r in st.session_state.recomendaciones:
                 aplicar_cambio(setup_mod, recomendacion_map[r])
-            # Guardar JSON
             with open("setup_modificado.json", "w") as f:
                 json.dump(setup_mod, f, indent=4)
-            st.success("Setup exportado como setup_modificado.json")
+            st.success("✅ Setup exportado como setup_modificado.json")
     else:
-        st.info("Para exportar debes cargar un setup primero.")
+        st.info("ℹ️ Para exportar debes cargar un setup primero.")
