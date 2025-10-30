@@ -59,8 +59,8 @@ if st.session_state.page == "home":
 # --- Menu Principal ---
 elif st.session_state.page == "menu":
     st.title("Categorías")
-    for category in MENU_SIMPLIFICADO.keys():
-        if st.button(category):
+    for idx, category in enumerate(MENU_SIMPLIFICADO.keys()):
+        if st.button(category, key=f"cat_{idx}"):
             st.session_state.selected_category = category
             st.session_state.page = "submenu_sintomas"
 
@@ -71,8 +71,8 @@ elif st.session_state.page == "menu":
 elif st.session_state.page == "submenu_sintomas":
     st.title(f"{st.session_state.selected_category}")
     sintomas = MENU_SIMPLIFICADO[st.session_state.selected_category]
-    for sintoma in sintomas:
-        if st.button(sintoma):
+    for idx, sintoma in enumerate(sintomas):
+        if st.button(sintoma, key=f"sintoma_{idx}"):
             st.session_state.selected_sintoma = sintoma
             st.session_state.page = "submenu_recomendaciones"
 
@@ -88,8 +88,8 @@ elif st.session_state.page == "submenu_recomendaciones":
 
     # Usamos directamente RECOMENDACIONES con la categoría completa
     recomendaciones = RECOMENDACIONES[category][sintoma]
-    for reco in recomendaciones:
-        if st.button(reco["accion"]):
+    for idx, reco in enumerate(recomendaciones):
+        if st.button(reco["accion"], key=f"reco_{idx}"):
             apply_recommendation(reco)
 
         st.write(f"*{reco.get('desc','')}*")  # descripción debajo del botón
