@@ -17,6 +17,7 @@ if "archivo_subido" not in st.session_state:
 
 # ---- Funciones ----
 def aplicar_recomendacion(categoria, sintoma, recomendacion):
+    """Agrega recomendación al resumen y muestra notificación temporal"""
     st.session_state.selecciones.append({
         "categoria": categoria,
         "sintoma": sintoma,
@@ -28,6 +29,7 @@ def aplicar_recomendacion(categoria, sintoma, recomendacion):
     st.toast(f"Aplicada: {recomendacion['accion']} ({recomendacion['change']} {recomendacion['unit']})")
 
 def mostrar_sintomas_y_recomendaciones(categoria):
+    """Muestra los síntomas y botones de recomendaciones de forma limpia"""
     sintomas = RECOMENDACIONES.get(categoria, {})
     for sintoma, acciones in sintomas.items():
         st.markdown(f"### {sintoma}")
@@ -41,24 +43,23 @@ def mostrar_sintomas_y_recomendaciones(categoria):
 # ---- Pantallas ----
 if st.session_state.pantalla == "home":
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-    archivo = st.file_uploader("Cargar setup ACC (.json)", type=["json"])
     
-    # Guardar temporalmente el archivo en session_state
-    if archivo is not None:
-        st.session_state.archivo_subido = archivo
-
-    # Botón para continuar después de cargar
-    if st.session_state.archivo_subido and st.button("Cargar setup"):
-        try:
-            st.session_state.setup = json.load(st.session_state.archivo_subido)
+    # Subir archivo
+    archivo = st.file_uploader("Cargar setup ACC (.json)", type=["json"], key="upld")
+    
+    # Botones para continuar
+    col1, col2 = st.columns([1,1])
+    with col1:
+        if archivo is not None and st.button("Cargar setup"):
+            try:
+                st.session_state.setup = json.load(archivo)
+                st.session_state.pantalla = "menu_principal"
+            except Exception as e:
+                st.error(f"Error leyendo el setup: {e}")
+    with col2:
+        if st.button("Continuar sin cargar setup"):
+            st.session_state.setup = None
             st.session_state.pantalla = "menu_principal"
-        except Exception as e:
-            st.error(f"Error leyendo el setup: {e}")
-
-    # Continuar sin setup
-    if st.button("Continuar sin cargar setup"):
-        st.session_state.setup = None
-        st.session_state.pantalla = "menu_principal"
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -81,22 +82,22 @@ elif st.session_state.pantalla == "submenu":
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ---- Resumen de recomendaciones ----
-if st.session_state.pantalla == "submenu":
+if st.session_state.selecciones:
     st.markdown("---")
-    st.markdown("## Resumen de recomendaciones seleccionadas")
-    if st.session_state.selecciones:
-        for idx, sel in enumerate(st.session_state.selecciones):
-            st.markdown(f"**{sel['categoria']} - {sel['sintoma']}**")
-            st.markdown(f"- Acción: {sel['accion']} ({sel['change']} {sel['unit']})")
-            if sel.get("desc"):
-                st.markdown(f"  *{sel['desc']}*")
-            if st.button("X", key=f"eliminar_{idx}"):
-                st.session_state.selecciones.pop(idx)
-    else:
-        st.markdown("No hay recomendaciones aplicadas aún.")
+    st.markdown(
+        "<div style='background-color: #f0f2f6; padding: 15px; border-radius: 8px; font-size: 0.9em;'>"
+        "<strong>Resumen de recomendaciones aplicadas:</strong>", unsafe_allow_html=True)
+    for idx, sel in enumerate(st.session_state.selecciones):
+        st.markdown(f"**{sel['categoria']} - {sel['sintoma']}**")
+        st.markdown(f"- Acción: {sel['accion']} ({sel['change']} {sel['unit']})")
+        if sel.get("desc"):
+            st.markdown(f"  *{sel['desc']}*")
+        if st.button("X", key=f"eliminar_{idx}"):
+            st.session_state.selecciones.pop(idx)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ---- Exportar setup con recomendaciones ----
-if st.session_state.pantalla == "submenu" and st.session_state.selecciones:
+if st.session_state.selecciones:
     st.markdown("---")
     if st.button("Exportar setup con recomendaciones"):
         export_data = {
