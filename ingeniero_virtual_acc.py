@@ -24,11 +24,20 @@ def apply_recommendation(reco):
     st.session_state.applied.append(reco)
     st.toast(f"Aplicado: {reco['accion']} {reco['change']}{reco['unit']}")  # ventanita temporal
 
+# 🔧 Mejorado para exportar con formato igual al original
 def download_setup():
     if st.session_state.setup:
-        data = json.dumps(st.session_state.setup, indent=4)
+        data = json.dumps(
+            st.session_state.setup,
+            indent=2,
+            separators=(',', ': '),
+            ensure_ascii=False
+        )
         b64 = base64.b64encode(data.encode()).decode()
-        href = f'<a href="data:file/json;base64,{b64}" download="setup_modificado.json">Descargar setup</a>'
+        href = (
+            f'<a href="data:file/json;base64,{b64}" '
+            f'download="setup_modificado.json">Descargar setup</a>'
+        )
         st.markdown(href, unsafe_allow_html=True)
 
 # --- Home Page ---
