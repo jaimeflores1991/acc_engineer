@@ -10,6 +10,8 @@ if "setup" not in st.session_state:
     st.session_state.setup = None
 if "selecciones" not in st.session_state:
     st.session_state.selecciones = []
+if "categoria_actual" not in st.session_state:
+    st.session_state.categoria_actual = None
 
 # Función para aplicar recomendación
 def aplicar_recomendacion(categoria, sintoma, recomendacion):
@@ -30,11 +32,12 @@ def mostrar_sintomas_y_recomendaciones(categoria):
         for rec in acciones:
             if st.button(rec["accion"], key=f'{categoria}_{sintoma}_{rec["accion"]}'):
                 aplicar_recomendacion(categoria, sintoma, rec)
+        for rec in acciones:
             if rec.get("desc"):
                 st.markdown(f"*{rec['desc']}*")
         st.markdown("---")
 
-# Pantalla Home
+# ---- Pantallas ----
 if st.session_state.pantalla == "home":
     st.write("")
     st.write("")
@@ -46,7 +49,6 @@ if st.session_state.pantalla == "home":
         try:
             st.session_state.setup = json.load(uploaded_file)
             st.session_state.pantalla = "menu_principal"
-            st.experimental_rerun()
         except Exception as e:
             st.error(f"Error leyendo el setup: {e}")
 
@@ -54,11 +56,9 @@ if st.session_state.pantalla == "home":
     if st.button("Continuar sin cargar setup", key="continuar", help="Puedes continuar sin setup, se usarán valores por defecto"):
         st.session_state.setup = None
         st.session_state.pantalla = "menu_principal"
-        st.experimental_rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Menú principal
 elif st.session_state.pantalla == "menu_principal":
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
     st.markdown("## Selecciona categoría")
@@ -66,10 +66,8 @@ elif st.session_state.pantalla == "menu_principal":
         if st.button(cat, key=f"cat_{cat}"):
             st.session_state.categoria_actual = cat
             st.session_state.pantalla = "submenu"
-            st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Submenu de categoría
 elif st.session_state.pantalla == "submenu":
     categoria = st.session_state.categoria_actual
     st.markdown(f"## {categoria}")
@@ -77,10 +75,9 @@ elif st.session_state.pantalla == "submenu":
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
     if st.button("Volver al menú principal"):
         st.session_state.pantalla = "menu_principal"
-        st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Resumen de recomendaciones
+# ---- Resumen de recomendaciones ----
 st.markdown("---")
 st.markdown("## Resumen de recomendaciones seleccionadas")
 if st.session_state.selecciones:
@@ -91,11 +88,10 @@ if st.session_state.selecciones:
             st.markdown(f"  *{sel['desc']}*")
         if st.button("X", key=f"eliminar_{idx}"):
             st.session_state.selecciones.pop(idx)
-            st.experimental_rerun()
 else:
     st.markdown("No hay recomendaciones aplicadas aún.")
 
-# Exportar setup con recomendaciones
+# ---- Exportar setup con recomendaciones ----
 st.markdown("---")
 if st.session_state.selecciones:
     if st.button("Exportar setup con recomendaciones"):
