@@ -359,3 +359,42 @@ RECOMENDACIONES = {
         ]
     }
 }
+# MENU_SIMPLIFICADO: las 4 categorías finales con síntomas
+MENU_SIMPLIFICADO = {
+    "Frenos y Electrónica": [
+        "No se detiene a tiempo",
+        "Se detiene muy pronto",
+        "Patina cuando freno - delantero",
+        "Patina cuando freno - trasero",
+        "Frena bien pero bloquea esporádicamente",
+        "Acelera muy despacio (pérdida de tracción en salida)",
+        "Frenada inestable con ABS",
+        "Mapa motor / aceleración inconsistente"
+    ],
+    "Aerodinámica y Altura": [
+        "Voy muy lento en rectas",
+        "Patino en curvas rápidas",
+        "El auto no gira en curvas (subviraje)",
+        "Oscilaciones a alta velocidad (flutter)"
+    ],
+    "Suspensión y Amortiguadores": [
+        "El auto no gira en curvas - entrada",
+        "El auto no gira en curvas - a lo largo",
+        "El auto no gira en curvas - salida",
+        "El auto gira demasiado (sobreviraje)",
+        "Neumáticos se desgastan rápido / se sobrecalientan",
+        "Dirección lenta o con mucha relación (steer ratio)",
+        "Rebote / bouncy (rebotan al salir de curva)",
+        "Amortiguación demasiado dura en compresión rápida",
+        "Carro demasiado blando en frenada (nose dive)"
+    ],
+    "Neumáticos y Diferencial": [
+        "PSI bajo al inicio o calienta rápido",
+        "PSI traseros bajo/alto",
+        "Desgaste exterior en delantero (carcasa caliente)",
+        "Desgaste interior (exceso de camber negativo)",
+        "Desgaste desigual entre ejes",
+        "Diferencial patina en salida",
+        "El coche vibra en baches a baja velocidad"
+    ]
+}
