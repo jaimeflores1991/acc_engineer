@@ -3,106 +3,110 @@ import streamlit as st
 import json
 from recomendaciones import RECOMENDACIONES
 
-# ---- Inicializar session_state ----
-if "pantalla" not in st.session_state:
-    st.session_state.pantalla = "home"
-if "setup" not in st.session_state:
-    st.session_state.setup = None
-if "selecciones" not in st.session_state:
-    st.session_state.selecciones = []
-if "categoria_actual" not in st.session_state:
-    st.session_state.categoria_actual = None
+st.set_page_config(page_title="Ingeniero de Pista ACC", layout="centered")
 
-# ---- Funciones ----
-def aplicar_recomendacion(categoria, sintoma, recomendacion):
-    st.session_state.selecciones.append({
-        "categoria": categoria,
-        "sintoma": sintoma,
-        "accion": recomendacion["accion"],
-        "change": recomendacion["change"],
-        "unit": recomendacion["unit"],
-        "desc": recomendacion.get("desc", "")
-    })
-    st.toast(f"Aplicada: {recomendacion['accion']} ({recomendacion['change']} {recomendacion['unit']})")
+# Inicializar variables de sesión
+if 'setup' not in st.session_state:
+    st.session_state.setup = None
+if 'menu_actual' not in st.session_state:
+    st.session_state.menu_actual = 'home'
+if 'selecciones' not in st.session_state:
+    st.session_state.selecciones = []
+
+# Funciones auxiliares
+def reset_app():
+    st.session_state.setup = None
+    st.session_state.menu_actual = 'home'
+    st.session_state.selecciones = []
+
+def aplicar_recomendacion(reco):
+    st.session_state.selecciones.append(reco)
+    st.toast(f"{reco['accion']} aplicado")  # Ventanita informativa
 
 def eliminar_recomendacion(idx):
-    del st.session_state.selecciones[idx]
+    if 0 <= idx < len(st.session_state.selecciones):
+        st.session_state.selecciones.pop(idx)
 
-def mostrar_sintomas_y_recomendaciones(categoria):
-    sintomas = RECOMENDACIONES.get(categoria, {})
-    for sintoma, acciones in sintomas.items():
-        st.markdown(f"### {sintoma}")
-        for rec in acciones:
-            if st.button(rec["accion"], key=f'{categoria}_{sintoma}_{rec["accion"]}'):
-                aplicar_recomendacion(categoria, sintoma, rec)
-            if rec.get("desc"):
-                st.markdown(f"*{rec['desc']}*")
-        st.markdown("---")
-
-def reset_app():
-    st.session_state.pantalla = "home"
-    st.session_state.setup = None
-    st.session_state.selecciones = []
-    st.session_state.categoria_actual = None
-
-# ---- Pantallas ----
-if st.session_state.pantalla == "home":
-    st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-    archivo = st.file_uploader("Cargar setup ACC (.json)", type=["json"])
-    col1, col2 = st.columns([1,1])
-    with col1:
-        if archivo is not None and st.button("Cargar setup"):
-            try:
-                st.session_state.setup = json.load(archivo)
-                st.session_state.pantalla = "menu_principal"
-            except Exception as e:
-                st.error(f"Error leyendo el setup: {e}")
-    with col2:
-        if st.button("Continuar sin cargar setup"):
-            st.session_state.setup = None
-            st.session_state.pantalla = "menu_principal"
-    st.markdown("</div>", unsafe_allow_html=True)
-
-elif st.session_state.pantalla == "menu_principal":
-    st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-    st.markdown("## Selecciona categoría")
-    for cat in RECOMENDACIONES.keys():
-        if st.button(cat, key=f"cat_{cat}"):
-            st.session_state.categoria_actual = cat
-            st.session_state.pantalla = "submenu"
-    st.markdown("</div>", unsafe_allow_html=True)
-
-elif st.session_state.pantalla == "submenu":
-    categoria = st.session_state.categoria_actual
-    st.markdown(f"## {categoria}")
-    mostrar_sintomas_y_recomendaciones(categoria)
-    if st.button("Volver al menú principal"):
-        st.session_state.pantalla = "menu_principal"
-
-# ---- Resumen de recomendaciones ----
-if st.session_state.selecciones:
+# --- HOME ---
+if st.session_state.menu_actual == 'home':
+    st.title("Ingeniero de Pista ACC")
+    st.markdown("### Carga tu setup o continúa sin setup")
+    
+    # Cargar setup
+    setup_file = st.file_uploader("Selecciona un archivo JSON de setup", type=["json"])
+    if setup_file:
+        try:
+            st.session_state.setup = json.load(setup_file)
+            st.success("Setup cargado correctamente")
+        except Exception as e:
+            st.error(f"Error leyendo el setup: {e}")
+    
     st.markdown("---")
-    st.markdown("## Resumen de recomendaciones aplicadas:")
-    for idx, sel in enumerate(st.session_state.selecciones):
-        cols = st.columns([8,1])
-        with cols[0]:
-            st.markdown(f"**{sel['categoria']} - {sel['sintoma']}**<br>- {sel['accion']} ({sel['change']} {sel['unit']})<br>{sel.get('desc','')}", unsafe_allow_html=True)
-        with cols[1]:
-            if st.button("X", key=f"del_{idx}"):
-                eliminar_recomendacion(idx)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Continuar sin cargar setup"):
+            st.session_state.menu_actual = 'menu_principal'
+            st.experimental_rerun()
+    with col2:
+        if st.session_state.setup:
+            if st.button("Continuar con setup cargado"):
+                st.session_state.menu_actual = 'menu_principal'
                 st.experimental_rerun()
 
-    if st.button("Limpiar todo y volver al inicio"):
-        reset_app()
-
-# ---- Exportar setup con recomendaciones ----
-if st.session_state.selecciones:
+# --- MENU PRINCIPAL ---
+elif st.session_state.menu_actual == 'menu_principal':
+    st.title("Categorías de ajustes")
+    for cat in RECOMENDACIONES.keys():
+        if st.button(cat):
+            st.session_state.menu_actual = cat
+            st.experimental_rerun()
+    
     st.markdown("---")
-    if st.button("Exportar setup con recomendaciones"):
-        export_data = {
-            "setup": st.session_state.setup,
-            "recomendaciones": st.session_state.selecciones
-        }
-        with open("setup_recomendado.json", "w") as f:
-            json.dump(export_data, f, indent=2)
-        st.success("Setup exportado como setup_recomendado.json")
+    if st.button("Volver al Home"):
+        reset_app()
+        st.experimental_rerun()
+
+# --- SUBMENUS ---
+elif st.session_state.menu_actual in RECOMENDACIONES:
+    categoria = st.session_state.menu_actual
+    st.title(categoria)
+    
+    sintomas = RECOMENDACIONES[categoria]
+    for sintoma, acciones in sintomas.items():
+        st.markdown(f"**{sintoma}**")
+        for i, reco in enumerate(acciones):
+            if st.button(f"{reco['accion']} ({reco['change']} {reco['unit']})", key=f"{categoria}_{sintoma}_{i}"):
+                aplicar_recomendacion(reco)
+            st.markdown(f"*{reco['desc']}*")
+        st.markdown("---")
+    
+    # Botón volver al menu principal
+    if st.button("Volver al menú principal"):
+        st.session_state.menu_actual = 'menu_principal'
+        st.experimental_rerun()
+
+# --- RESUMEN DE RECOMENDACIONES ---
+if st.session_state.selecciones:
+    st.markdown("## Resumen de recomendaciones aplicadas:")
+    for idx, reco in enumerate(st.session_state.selecciones):
+        col1, col2 = st.columns([8, 1])
+        with col1:
+            st.markdown(f"- {reco['accion']} ({reco['change']} {reco['unit']})")
+        with col2:
+            if st.button("X", key=f"elim_{idx}"):
+                eliminar_recomendacion(idx)
+                st.experimental_rerun()
+    
+    st.markdown("---")
+    # Botón descargar JSON
+    export_data = {
+        "setup": st.session_state.setup,
+        "recomendaciones": st.session_state.selecciones
+    }
+    export_json = json.dumps(export_data, indent=2)
+    st.download_button(
+        label="Descargar setup con recomendaciones",
+        data=export_json,
+        file_name="setup_recomendado.json",
+        mime="application/json"
+    )
