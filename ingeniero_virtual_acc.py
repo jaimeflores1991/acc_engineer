@@ -23,7 +23,7 @@ def aplicar_recomendacion(categoria, sintoma, recomendacion):
         "unit": recomendacion["unit"],
         "desc": recomendacion.get("desc", "")
     })
-    # Mostrar notificación emergente
+    # Mostrar notificación emergente (toast)
     st.toast(f"Aplicada: {recomendacion['accion']} ({recomendacion['change']} {recomendacion['unit']})")
 
 def mostrar_sintomas_y_recomendaciones(categoria):
@@ -45,14 +45,12 @@ if st.session_state.pantalla == "home":
         try:
             st.session_state.setup = json.load(uploaded_file)
             st.session_state.pantalla = "menu_principal"
-            st.experimental_rerun()
         except Exception as e:
             st.error(f"Error leyendo el setup: {e}")
 
     if st.button("Continuar sin cargar setup", key="continuar", help="Usar valores por defecto"):
         st.session_state.setup = None
         st.session_state.pantalla = "menu_principal"
-        st.experimental_rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -63,7 +61,6 @@ elif st.session_state.pantalla == "menu_principal":
         if st.button(cat, key=f"cat_{cat}"):
             st.session_state.categoria_actual = cat
             st.session_state.pantalla = "submenu"
-            st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif st.session_state.pantalla == "submenu":
@@ -73,7 +70,6 @@ elif st.session_state.pantalla == "submenu":
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
     if st.button("Volver al menú principal"):
         st.session_state.pantalla = "menu_principal"
-        st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ---- Resumen de recomendaciones ----
@@ -88,7 +84,6 @@ if st.session_state.pantalla == "submenu":
                 st.markdown(f"  *{sel['desc']}*")
             if st.button("X", key=f"eliminar_{idx}"):
                 st.session_state.selecciones.pop(idx)
-                st.experimental_rerun()
     else:
         st.markdown("No hay recomendaciones aplicadas aún.")
 
