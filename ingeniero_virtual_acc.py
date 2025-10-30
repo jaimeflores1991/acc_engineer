@@ -12,6 +12,8 @@ if "selecciones" not in st.session_state:
     st.session_state.selecciones = []
 if "categoria_actual" not in st.session_state:
     st.session_state.categoria_actual = None
+if "archivo_subido" not in st.session_state:
+    st.session_state.archivo_subido = None
 
 # ---- Funciones ----
 def aplicar_recomendacion(categoria, sintoma, recomendacion):
@@ -23,7 +25,6 @@ def aplicar_recomendacion(categoria, sintoma, recomendacion):
         "unit": recomendacion["unit"],
         "desc": recomendacion.get("desc", "")
     })
-    # Mostrar notificación emergente (toast)
     st.toast(f"Aplicada: {recomendacion['accion']} ({recomendacion['change']} {recomendacion['unit']})")
 
 def mostrar_sintomas_y_recomendaciones(categoria):
@@ -40,15 +41,22 @@ def mostrar_sintomas_y_recomendaciones(categoria):
 # ---- Pantallas ----
 if st.session_state.pantalla == "home":
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-    uploaded_file = st.file_uploader("Cargar setup ACC (.json)", type=["json"])
-    if uploaded_file is not None:
+    archivo = st.file_uploader("Cargar setup ACC (.json)", type=["json"])
+    
+    # Guardar temporalmente el archivo en session_state
+    if archivo is not None:
+        st.session_state.archivo_subido = archivo
+
+    # Botón para continuar después de cargar
+    if st.session_state.archivo_subido and st.button("Cargar setup"):
         try:
-            st.session_state.setup = json.load(uploaded_file)
+            st.session_state.setup = json.load(st.session_state.archivo_subido)
             st.session_state.pantalla = "menu_principal"
         except Exception as e:
             st.error(f"Error leyendo el setup: {e}")
 
-    if st.button("Continuar sin cargar setup", key="continuar", help="Usar valores por defecto"):
+    # Continuar sin setup
+    if st.button("Continuar sin cargar setup"):
         st.session_state.setup = None
         st.session_state.pantalla = "menu_principal"
 
