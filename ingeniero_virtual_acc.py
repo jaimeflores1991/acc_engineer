@@ -40,14 +40,18 @@ def mostrar_sintomas_y_recomendaciones(categoria):
                 st.markdown(f"*{rec['desc']}*")
         st.markdown("---")
 
+def reset_app():
+    """Reinicia todo y vuelve al home"""
+    st.session_state.pantalla = "home"
+    st.session_state.setup = None
+    st.session_state.selecciones = []
+    st.session_state.categoria_actual = None
+    st.session_state.archivo_subido = None
+
 # ---- Pantallas ----
 if st.session_state.pantalla == "home":
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-    
-    # Subir archivo
     archivo = st.file_uploader("Cargar setup ACC (.json)", type=["json"], key="upld")
-    
-    # Botones para continuar
     col1, col2 = st.columns([1,1])
     with col1:
         if archivo is not None and st.button("Cargar setup"):
@@ -60,7 +64,6 @@ if st.session_state.pantalla == "home":
         if st.button("Continuar sin cargar setup"):
             st.session_state.setup = None
             st.session_state.pantalla = "menu_principal"
-
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif st.session_state.pantalla == "menu_principal":
@@ -85,8 +88,10 @@ elif st.session_state.pantalla == "submenu":
 if st.session_state.selecciones:
     st.markdown("---")
     st.markdown(
-        "<div style='background-color: #f0f2f6; padding: 15px; border-radius: 8px; font-size: 0.9em;'>"
-        "<strong>Resumen de recomendaciones aplicadas:</strong>", unsafe_allow_html=True)
+        """
+        <div style='background-color: #e6e6e6; padding: 15px; border-radius: 8px; font-size: 0.9em;'>
+        <strong>Resumen de recomendaciones aplicadas:</strong>
+        """, unsafe_allow_html=True)
     for idx, sel in enumerate(st.session_state.selecciones):
         st.markdown(f"**{sel['categoria']} - {sel['sintoma']}**")
         st.markdown(f"- Acción: {sel['accion']} ({sel['change']} {sel['unit']})")
@@ -95,6 +100,10 @@ if st.session_state.selecciones:
         if st.button("X", key=f"eliminar_{idx}"):
             st.session_state.selecciones.pop(idx)
     st.markdown("</div>", unsafe_allow_html=True)
+
+    # Botón limpiar todo
+    if st.button("Limpiar todo y volver al inicio"):
+        reset_app()
 
 # ---- Exportar setup con recomendaciones ----
 if st.session_state.selecciones:
