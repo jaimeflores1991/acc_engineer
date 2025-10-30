@@ -52,6 +52,20 @@ def eliminar_recomendacion(idx):
 # Layout centrado
 st.markdown("<h1 style='text-align: center;'>Ingeniero de Pista ACC</h1>", unsafe_allow_html=True)
 
+# Función para mostrar resumen siempre
+def mostrar_resumen():
+    if st.session_state.recomendaciones_seleccionadas:
+        st.markdown("<h4 style='text-align: center;'>Resumen de Recomendaciones Seleccionadas</h4>", unsafe_allow_html=True)
+        for idx, rec in enumerate(st.session_state.recomendaciones_seleccionadas):
+            col1, col2 = st.columns([6, 1])
+            with col1:
+                st.markdown(f"- {rec['accion']} ({rec['change']}{rec['unit']})")
+            with col2:
+                if st.button("❌", key=f"del_{idx}"):
+                    eliminar_recomendacion(idx)
+                    st.experimental_rerun()
+        st.markdown("<br>", unsafe_allow_html=True)
+
 # Pantallas
 if st.session_state.pantalla == "home":
     st.write("")
@@ -84,6 +98,8 @@ elif st.session_state.pantalla == "sintomas":
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("Volver al menú principal"):
         volver_menu_principal()
+    st.markdown("<hr>", unsafe_allow_html=True)
+    mostrar_resumen()
 
 elif st.session_state.pantalla == "recomendaciones":
     cat = st.session_state.categoria_actual
@@ -102,17 +118,12 @@ elif st.session_state.pantalla == "recomendaciones":
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("Volver al menú principal"):
         volver_menu_principal()
+    st.markdown("<hr>", unsafe_allow_html=True)
+    mostrar_resumen()
 
 elif st.session_state.pantalla == "resumen":
     st.markdown("<h2 style='text-align: center;'>Resumen de Recomendaciones</h2>", unsafe_allow_html=True)
-    for idx, rec in enumerate(st.session_state.recomendaciones_seleccionadas):
-        col1, col2 = st.columns([6, 1])
-        with col1:
-            st.markdown(f"- {rec['accion']} ({rec['change']}{rec['unit']})")
-        with col2:
-            if st.button("❌", key=f"del_{idx}"):
-                eliminar_recomendacion(idx)
-                st.experimental_rerun()
+    mostrar_resumen()
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("Volver al menú principal"):
         volver_menu_principal()
