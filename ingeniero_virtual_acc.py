@@ -86,7 +86,6 @@ elif st.session_state.page == "submenu_recomendaciones":
     category = st.session_state.selected_category
     sintoma = st.session_state.selected_sintoma
 
-    # Usamos directamente RECOMENDACIONES con la categoría completa
     recomendaciones = RECOMENDACIONES[category][sintoma]
     for idx, reco in enumerate(recomendaciones):
         if st.button(reco["accion"], key=f"reco_{idx}"):
