@@ -82,21 +82,15 @@ elif st.session_state.pantalla == "submenu":
 # ---- Resumen de recomendaciones ----
 if st.session_state.selecciones:
     st.markdown("---")
-    with st.container():
-        st.markdown(
-            "<div style='background-color:#fdf3e7; padding:15px; border-radius:8px; font-size:0.9em;'>"
-            "<strong>Resumen de recomendaciones aplicadas:</strong><br><br>",
-            unsafe_allow_html=True
-        )
-        for idx, sel in enumerate(st.session_state.selecciones):
-            cols = st.columns([8,1])
-            with cols[0]:
-                st.markdown(f"**{sel['categoria']} - {sel['sintoma']}**<br>- {sel['accion']} ({sel['change']} {sel['unit']})<br>{sel.get('desc','')}", unsafe_allow_html=True)
-            with cols[1]:
-                if st.button("X", key=f"del_{idx}"):
-                    eliminar_recomendacion(idx)
-                    st.experimental_rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("## Resumen de recomendaciones aplicadas:")
+    for idx, sel in enumerate(st.session_state.selecciones):
+        cols = st.columns([8,1])
+        with cols[0]:
+            st.markdown(f"**{sel['categoria']} - {sel['sintoma']}**<br>- {sel['accion']} ({sel['change']} {sel['unit']})<br>{sel.get('desc','')}", unsafe_allow_html=True)
+        with cols[1]:
+            if st.button("X", key=f"del_{idx}"):
+                eliminar_recomendacion(idx)
+                st.experimental_rerun()
 
     if st.button("Limpiar todo y volver al inicio"):
         reset_app()
