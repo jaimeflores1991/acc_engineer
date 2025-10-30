@@ -28,6 +28,10 @@ def aplicar_recomendacion(categoria, sintoma, recomendacion):
     })
     st.toast(f"Aplicada: {recomendacion['accion']} ({recomendacion['change']} {recomendacion['unit']})")
 
+def eliminar_recomendacion(idx):
+    """Elimina una recomendación del resumen"""
+    del st.session_state.selecciones[idx]
+
 def mostrar_sintomas_y_recomendaciones(categoria):
     """Muestra los síntomas y botones de recomendaciones de forma limpia"""
     sintomas = RECOMENDACIONES.get(categoria, {})
@@ -91,10 +95,17 @@ if st.session_state.selecciones:
     resumen_html = "<div style='background-color: #fdf3e7; color: #000; padding: 15px; border-radius: 8px; font-size: 0.9em;'>"
     resumen_html += "<strong>Resumen de recomendaciones aplicadas:</strong><br><br>"
     for idx, sel in enumerate(st.session_state.selecciones):
-        resumen_html += f"<strong>{sel['categoria']} - {sel['sintoma']}</strong><br>"
-        resumen_html += f"- Acción: {sel['accion']} ({sel['change']} {sel['unit']})<br>"
-        if sel.get("desc"):
-            resumen_html += f"<em>{sel['desc']}</em><br>"
+        # Cada recomendación con botón X
+        col1, col2 = st.columns([8,1])
+        with col1:
+            resumen_html += f"<strong>{sel['categoria']} - {sel['sintoma']}</strong><br>"
+            resumen_html += f"- Acción: {sel['accion']} ({sel['change']} {sel['unit']})<br>"
+            if sel.get("desc"):
+                resumen_html += f"<em>{sel['desc']}</em><br>"
+        with col2:
+            if st.button("X", key=f"del_{idx}"):
+                eliminar_recomendacion(idx)
+                st.experimental_rerun()
         resumen_html += "<br>"
     resumen_html += "</div>"
     st.markdown(resumen_html, unsafe_allow_html=True)
