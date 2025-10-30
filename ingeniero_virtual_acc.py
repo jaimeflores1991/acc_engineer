@@ -5,15 +5,19 @@ from recomendaciones import RECOMENDACIONES as mapa_recomendaciones
 
 st.set_page_config(page_title="Ingeniero de Pista ACC", layout="centered")
 
-# ---- SESIÓN ----
+# ---------------- SESIÓN ----------------
 if "menu_actual" not in st.session_state:
     st.session_state.menu_actual = "home"
 if "setup" not in st.session_state:
     st.session_state.setup = None
 if "recomendaciones_aplicadas" not in st.session_state:
     st.session_state.recomendaciones_aplicadas = []
+if "cat_actual" not in st.session_state:
+    st.session_state.cat_actual = None
+if "sintoma_actual" not in st.session_state:
+    st.session_state.sintoma_actual = None
 
-# ---- FUNCIONES ----
+# ---------------- FUNCIONES ----------------
 def cargar_setup(file):
     try:
         st.session_state.setup = json.load(file)
@@ -32,12 +36,14 @@ def aplicar_recomendacion(cat, sintoma, rec_index):
         "unit": rec["unit"],
         "desc": rec.get("desc","")
     })
-    st.toast(f"Aplicada: {rec['accion']}")
+    st.success(f"Aplicada: {rec['accion']}")
 
 def borrar_recomendaciones():
     st.session_state.recomendaciones_aplicadas = []
     st.session_state.menu_actual = "home"
     st.session_state.setup = None
+    st.session_state.cat_actual = None
+    st.session_state.sintoma_actual = None
 
 def exportar_setup():
     if st.session_state.setup:
@@ -46,7 +52,7 @@ def exportar_setup():
     else:
         st.warning("No hay setup para exportar.")
 
-# ---- HOME ----
+# ---------------- HOME ----------------
 if st.session_state.menu_actual == "home":
     st.title("Ingeniero de Pista ACC")
     st.write("Carga un setup o continúa sin setup.")
@@ -55,9 +61,10 @@ if st.session_state.menu_actual == "home":
     if file:
         cargar_setup(file)
 
-    st.button("Continuar sin setup", on_click=lambda: setattr(st.session_state, 'menu_actual', 'menu_principal'))
+    if st.button("Continuar sin setup"):
+        st.session_state.menu_actual = "menu_principal"
 
-# ---- MENÚ PRINCIPAL ----
+# ---------------- MENÚ PRINCIPAL ----------------
 elif st.session_state.menu_actual == "menu_principal":
     st.title("Menú Principal")
     categorias = list(mapa_recomendaciones.keys())
@@ -67,6 +74,7 @@ elif st.session_state.menu_actual == "menu_principal":
             st.session_state.cat_actual = cat
             st.session_state.sintoma_actual = None
 
+    # Resumen de recomendaciones aplicadas
     if st.session_state.recomendaciones_aplicadas:
         st.markdown("### Resumen de recomendaciones aplicadas:")
         for i, r in enumerate(st.session_state.recomendaciones_aplicadas):
@@ -76,13 +84,14 @@ elif st.session_state.menu_actual == "menu_principal":
             with col2:
                 if st.button("❌", key=f"borrar_{i}"):
                     st.session_state.recomendaciones_aplicadas.pop(i)
-                    st.experimental_rerun()
+                    st.experimental_rerun = lambda: None  # Evita error
+                    st.experimental_rerun()  # Fuerza recarga del resumen
 
     st.button("Borrar todo y volver al inicio", on_click=borrar_recomendaciones)
 
     exportar_setup()
 
-# ---- CATEGORÍA ----
+# ---------------- CATEGORÍA ----------------
 elif st.session_state.menu_actual.startswith("cat_"):
     cat = st.session_state.cat_actual
     st.title(cat)
