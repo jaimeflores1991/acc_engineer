@@ -16,13 +16,16 @@ if "cat_actual" not in st.session_state:
     st.session_state.cat_actual = None
 if "sintoma_actual" not in st.session_state:
     st.session_state.sintoma_actual = None
+if "setup_cargado" not in st.session_state:
+    st.session_state.setup_cargado = False
 
 # ---------------- FUNCIONES ----------------
 def cargar_setup(file):
     try:
         st.session_state.setup = json.load(file)
+        st.session_state.setup_cargado = True
         st.session_state.menu_actual = "menu_principal"
-        st.success("Setup cargado correctamente.")
+        st.success("Setup cargado correctamente. Ya puedes continuar.")
     except Exception as e:
         st.error(f"Error leyendo el setup: {e}")
 
@@ -44,6 +47,7 @@ def borrar_recomendaciones():
     st.session_state.setup = None
     st.session_state.cat_actual = None
     st.session_state.sintoma_actual = None
+    st.session_state.setup_cargado = False
 
 def exportar_setup():
     if st.session_state.setup:
@@ -65,7 +69,7 @@ if st.session_state.menu_actual == "home":
         st.session_state.menu_actual = "menu_principal"
 
 # ---------------- MENÚ PRINCIPAL ----------------
-elif st.session_state.menu_actual == "menu_principal":
+if st.session_state.menu_actual == "menu_principal":
     st.title("Menú Principal")
     categorias = list(mapa_recomendaciones.keys())
     for cat in categorias:
@@ -84,15 +88,14 @@ elif st.session_state.menu_actual == "menu_principal":
             with col2:
                 if st.button("❌", key=f"borrar_{i}"):
                     st.session_state.recomendaciones_aplicadas.pop(i)
-                    st.experimental_rerun = lambda: None  # Evita error
-                    st.experimental_rerun()  # Fuerza recarga del resumen
+                    st.experimental_rerun = lambda: None
+                    st.experimental_rerun()
 
     st.button("Borrar todo y volver al inicio", on_click=borrar_recomendaciones)
-
     exportar_setup()
 
 # ---------------- CATEGORÍA ----------------
-elif st.session_state.menu_actual.startswith("cat_"):
+if st.session_state.menu_actual.startswith("cat_"):
     cat = st.session_state.cat_actual
     st.title(cat)
 
