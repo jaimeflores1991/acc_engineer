@@ -87,21 +87,17 @@ elif st.session_state.pantalla == "submenu":
 # ---- Resumen de recomendaciones ----
 if st.session_state.selecciones:
     st.markdown("---")
-    # cuadro completo de resumen
-    st.markdown(
-        """
-        <div style='background-color: #fdf3e7; color: #000; padding: 15px; border-radius: 8px; font-size: 0.9em;'>
-        <strong>Resumen de recomendaciones aplicadas:</strong>
-        <br><br>
-        """, unsafe_allow_html=True)
+    # Crear un solo cuadro que contenga TODO el resumen
+    resumen_html = "<div style='background-color: #fdf3e7; color: #000; padding: 15px; border-radius: 8px; font-size: 0.9em;'>"
+    resumen_html += "<strong>Resumen de recomendaciones aplicadas:</strong><br><br>"
     for idx, sel in enumerate(st.session_state.selecciones):
-        st.markdown(f"**{sel['categoria']} - {sel['sintoma']}**")
-        st.markdown(f"- Acción: {sel['accion']} ({sel['change']} {sel['unit']})")
+        resumen_html += f"<strong>{sel['categoria']} - {sel['sintoma']}</strong><br>"
+        resumen_html += f"- Acción: {sel['accion']} ({sel['change']} {sel['unit']})<br>"
         if sel.get("desc"):
-            st.markdown(f"  *{sel['desc']}*")
-        if st.button("X", key=f"eliminar_{idx}"):
-            st.session_state.selecciones.pop(idx)
-    st.markdown("</div>", unsafe_allow_html=True)
+            resumen_html += f"<em>{sel['desc']}</em><br>"
+        resumen_html += "<br>"
+    resumen_html += "</div>"
+    st.markdown(resumen_html, unsafe_allow_html=True)
 
     # Botón limpiar todo
     if st.button("Limpiar todo y volver al inicio"):
